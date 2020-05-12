@@ -1,0 +1,26 @@
+{% extends 'settings/settings.html' %}
+{% load i18n static %}
+{% block settings_content %}
+<form id="settings" method="POST" class="col-md-8 m-auto">
+  <h5>{% trans "Personal Token Settings" %}</h5>
+  <div class="form-group">
+    <label class="form__label" for="token">{% trans "Token Name" %}</label>
+    <input type="text" name="token" class="form__input" placeholder='My Awesome Token' value="{{ profile.personal_token }}">
+  </div>
+  <div class="form-group">
+    <label class="form__label" for="repos">{% trans "Token Symbol" %}</label>
+    <input type="text" name="repos" class="form__input" placeholder='MAT' value="{{ profile.personal_token_symbol }}">
+  </div>
+  <div class="form-group">
+    <label class="form__label" for="channel">{% trans "Token Price (DAI)" %}</label>
+    <input type="text" name="channel" class="form__input" placeholder='40' value="{{ profile.personal_token_price }}">
+    <small id="personal_token_price_help" class="form__input-help">{% trans "Set this to the hourly rate you would like to charge, in US dollars." %}</small>
+  </div>
+  <div class="form-group">
+    <label class="form__label" for="channel">{% trans "Mint Tokens" %}</label>
+    <input type="text" name="channel" class="form__input" placeholder='100' value="{{ profile.personal_token_mint_amount }}">
+  </div>
+  {% csrf_token %}
+  <input class='button button--primary' type='submit' name='submit' value="{% trans "Create" %}">
+</form>
+{% endblock %}

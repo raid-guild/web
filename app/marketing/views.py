@@ -85,6 +85,9 @@ def get_settings_navs(request):
     }, {
         'body': _('Job Status'),
         'href': reverse('job_settings'),
+    }, {
+        'body': _('Personal Token'),
+        'href': reverse('personal_token_settings'),
     }]
 
     if request.user.is_staff:
@@ -717,6 +720,77 @@ def org_settings(request):
         'current_scopes': current_scopes,
     }
     return TemplateResponse(request, 'settings/organizations.html', context)
+
+def personal_token_settings(request):
+    """Display and save user's Account settings.
+
+    Returns:
+        TemplateResponse: The user's Account settings template response.
+
+    """
+    msg = ''
+    profile, es, user, is_logged_in = settings_helper_get_auth(request)
+
+    if not user or not profile or not is_logged_in:
+        login_redirect = redirect('/login/github?next=' + request.get_full_path())
+        return login_redirect
+
+    if request.POST:
+
+        if 'preferred_payout_address' in request.POST.keys():
+            eth_address = request.POST.get('preferred_payout_address', '')
+            if not is_valid_eth_address(eth_address):
+                eth_address = profile.preferred_payout_address
+            profile.preferred_payout_address = eth_address
+            profile.save()
+            msg = _('Updated your Address')
+        elif request.POST.get('disconnect', False):
+            profile.github_access_token = ''
+            profile = record_form_submission(request, profile, 'account-disconnect')
+            profile.email = ''
+            profile.save()
+            create_user_action(profile.user, 'account_disconnected', request)
+            messages.success(request, _('Your account has been disconnected from Github'))
+            logout_redirect = redirect(reverse('logout') + '?next=/')
+            return logout_redirect
+        elif request.POST.get('delete', False):
+
+            # remove profile
+            profile.hide_profile = True
+            profile = record_form_submission(request, profile, 'account-delete')
+            profile.email = ''
+            profile.save()
+
+            # remove email
+            delete_user_from_mailchimp(es.email)
+
+            if es:
+                es.delete()
+            request.user.delete()
+            AccountDeletionRequest.objects.create(
+                handle=profile.handle.lower(),
+                profile={
+                        'ip': get_ip(request),
+                    }
+                )
+            profile.delete()
+            messages.success(request, _('Your account has been deleted.'))
+            logout_redirect = redirect(reverse('logout') + '?next=/')
+            return logout_redirect
+        else:
+            msg = _('Error: did not understand your request')
+
+    context = {
+        'is_logged_in': is_logged_in,
+        'nav': 'home',
+        'active': '/settings/personal-token',
+        'title': _('Personal Token Settings'),
+        'navs': get_settings_navs(request),
+        'es': es,
+        'profile': profile,
+        'msg': msg,
+    }
+    return TemplateResponse(request, 'settings/personal_token.html', context)
 
 
 def _leaderboard(request):
