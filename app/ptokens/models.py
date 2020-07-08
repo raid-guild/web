@@ -71,7 +71,7 @@ TX_STATUS_CHOICES = (
     ('dropped', 'dropped'),
 )
 
-FACTORY_ADDRESS = '0x80D50970599E33d0D5D436A649C25b729666A015'
+FACTORY_ADDRESS = '0x589C95378793DA00da5493b7D11145bb7991b682'
 
 class PersonalTokenQuerySet(models.QuerySet):
     """Handle the manager queryset for Personal Tokens."""
