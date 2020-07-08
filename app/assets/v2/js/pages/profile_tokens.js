@@ -66,13 +66,23 @@ $(document).on('click', '#submit_redeem_token', (event) => {
 });
 
 async function buyPToken(tokenAmount) {
-  [user] = await web3.eth.getAccounts();
+  // Make sure user is connected and request token approval
+  const { user, purchaseTokenAddress } = await this.checkWeb3();
+  const purchaseTokenContract = new web3.eth.Contract(token_abi, purchaseTokenAddress);
+  const amount = web3.utils.toWei(tokenAmount);
+
+  const pTokenAddress = undefined; // TODO
+
+  purchaseTokenContract.methods.approve(pTokenAddress, amount);
+  return;
+
+
   const pToken = await new web3.eth.Contract(
     document.contxt.ptoken_abi, // TODO: contxt.ptoken_abi needs to be implemented.
     pTokenAddress // TODO: this needs to be derived from the profile page
   );
 
-  // TODO add token approval step
+  // Approve ptoken contract to spend your Dai
 
   pToken.methods
     .purchase(tokenAmount)
@@ -108,4 +118,38 @@ async function redeemPToken(tokenAmount) {
       request_redemption(pTokenId, tokenAmount, network); // TODO: determine token ID and network
     });
   // TODO need to confirm that transaction was confirmed. Use web3's getTransactionReceipt
+}
+
+function handleError(err) {
+  console.error(err); // eslint-disable-line no-console
+  let message = 'There was an error';
+
+  if (err.message)
+    message = err.message;
+  else if (err.msg)
+    message = err.msg;
+  else if (typeof err === 'string')
+    message = err;
+
+  _alert(message, 'error');
+  indicateMetamaskPopup(true);
+}
+
+async function checkWeb3() {
+  if (!web3) {
+    _alert('Please connect a wallet', 'error');
+    throw new Error('Please connect a wallet');
+  }
+  [user] = await web3.eth.getAccounts();
+
+  if (document.web3network === 'rinkeby') {
+    purchaseTokenAddress = '0x6A9865aDE2B6207dAAC49f8bCba9705dEB0B0e6D';
+  } else if (document.web3network === 'mainnet') {
+    purchaseTokenAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
+  } else {
+    _alert('Unsupported network', 'error');
+    throw new Error('Please connect a wallet');
+  }
+
+  return { user, purchaseTokenAddress };
 }
