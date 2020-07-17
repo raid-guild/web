@@ -66,7 +66,7 @@ $(document).on('click', '#submit_redeem_token', (event) => {
   const amountField = $(form.ptokenRedeemAmount);
   const tos = $(form.ptokenRedeemTerms);
   const redeem_amount = parseFloat(amountField.val());
-  const redeem_description = $('#ptokenRedeemDescription').val()
+  const redeem_description = $('#ptokenRedeemDescription').val();
 
   if (!tos.prop('checked')) {
     event.stopPropagation();
@@ -197,14 +197,16 @@ async function buyPToken(tokenAmount) {
 async function requestPtokenRedemption(tokenAmount, redemptionDescription) {
   try {
     const network = checkNetwork();
-    request_redemption(document.current_ptoken_id, tokenAmount, redemptionDescription, network)
-  } catch(err) {
+
+    request_redemption(document.current_ptoken_id, tokenAmount, redemptionDescription, network);
+  } catch (err) {
     handleError(err);
   }
 }
 
 function checkNetwork() {
-  const supportedNetworks = ['rinkeby', 'mainnet'];
+  const supportedNetworks = [ 'rinkeby', 'mainnet' ];
+
   if (!supportedNetworks.includes(document.web3network)) {
     _alert('Unsupported network', 'error');
     throw new Error('Please connect a wallet');
@@ -212,36 +214,6 @@ function checkNetwork() {
   return document.web3network;
 }
 
-// tokenAmount input should be in human-readable form, e.g. "5"
-async function completePtokenRedemption(tokenAmount, redemptionId) {
-  try {
-    const network = checkNetwork();
-    const amount = web3.utils.toWei(String(tokenAmount));
-    const [ user ] = await web3.eth.getAccounts();
-
-    indicateMetamaskPopup();
-    const pToken = await new web3.eth.Contract(
-      document.contxt.ptoken_abi,
-      document.current_ptoken_address
-    );
-
-    pToken.methods.redeem(amount).send({ from: user })
-      .on('transactionHash', function(transactionHash) {
-        complete_redemption(
-          redemptionId,
-          transactionHash,
-          "pending",
-          network,
-          new Date().toISOString()
-        );
-      }).on('error', (error, receipt) => {
-        console.log(error);
-        handleError(error);
-      });
-  } catch(err) {
-    handleError(err);
-  }
-}
 
 function handleError(err) {
   console.error(err);

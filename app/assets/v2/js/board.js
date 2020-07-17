@@ -424,6 +424,43 @@ Vue.mixin({
       });
     },
 
+    async complete(token) {
+      try {
+        const { user } = await this.checkWeb3();
+        const amount = web3.utils.toWei(String(token.amount));
+        const handleError = this.handleError;
+
+        // TODO get list of all ptokens: this function does not work
+        const ptokens = get_ptokens();
+
+        // TODO filter down to the appropriate token: ensure this line works
+        const ptoken = ptokens.filter(ptoken => ptoken.id === token.ptoken);
+
+        indicateMetamaskPopup();
+        const pTokenContract = await new web3.eth.Contract(
+          document.contxt.ptoken_abi,
+          ptoken.token_address
+        );
+
+        pTokenContract.methods.redeem(amount).send({ from: user })
+          .on('transactionHash', function(transactionHash) {
+            indicateMetamaskPopup(true);
+            complete_redemption(
+              String(token.id),
+              transactionHash,
+              'pending',
+              network,
+              new Date().toISOString()
+            );
+          }).on('error', (error, receipt) => {
+            console.error(error);
+            handleError(error);
+          });
+      } catch (err) {
+        handleError(err);
+      }
+    },
+
     handleError(err) {
       console.error(err); // eslint-disable-line no-console
       let message = 'There was an error';
